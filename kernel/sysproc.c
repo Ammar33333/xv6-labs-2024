@@ -1,10 +1,12 @@
 #include "types.h"
 #include "riscv.h"
 #include "defs.h"
+// #include "date.h"
 #include "param.h"
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+
 
 uint64
 sys_exit(void)
@@ -91,3 +93,16 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64 sys_getcycle(void) {
+  return r_cycle();
+}
+
+uint64 sys_gettime(void) {
+  return r_time();
+}
+
+uint64 sys_getinstret(void) {
+  return r_instret();
+}
+

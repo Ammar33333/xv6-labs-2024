@@ -284,6 +284,23 @@ r_time()
   return x;
 }
 
+static inline uint64
+r_cycle()
+{
+    uint64 x;
+    asm volatile("rdcycle %0" : "=r"(x));
+    return x;
+}
+
+static inline uint64
+r_instret()
+{
+    uint64 x;
+    asm volatile("rdinstret %0" : "=r"(x));
+    return x;
+}
+
+
 // enable device interrupts
 static inline void
 intr_on()
@@ -399,3 +416,6 @@ typedef uint64 *pagetable_t; // 512 PTEs
 // Sv39, to avoid having to sign-extend virtual addresses
 // that have the high bit set.
 #define MAXVA (1L << (9 + 9 + 9 + 12 - 1))
+
+
+
