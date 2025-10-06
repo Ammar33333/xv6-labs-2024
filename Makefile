@@ -199,6 +199,9 @@ UPROGS=\
 	$U/_primes\
 	$U/_find\
 	$U/_xargs\
+		$U/_memtest\
+		$U/_mmbench\
+
 
 
 
@@ -307,7 +310,7 @@ endif
 FWDPORT1 = $(shell expr `id -u` % 5000 + 25999)
 FWDPORT2 = $(shell expr `id -u` % 5000 + 30999)
 
-QEMUOPTS = -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -icount shift=0
+QEMUOPTS = -machine virt -bios none -kernel kernel/kernel -m 512M -smp 3 -nographic -icount shift=0
 QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
