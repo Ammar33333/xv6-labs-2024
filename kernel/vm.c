@@ -154,6 +154,22 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
 
   if(size == 0)
     panic("mappages: size");
+
+// Try to use a superpage (2MB) if aligned and large enough
+if ((size >= 2 * 1024 * 1024) &&
+    (va % (2 * 1024 * 1024) == 0) &&
+    (pa % (2 * 1024 * 1024) == 0)) {
+
+  int vpn2 = (va >> 30) & 0x1FF; // bits [38:30]
+  pte_t *pte = &pagetable[vpn2];
+
+  // Only map if it's not already valid
+  if (!(*pte & PTE_V)) {
+    *pte = PA2PTE(pa) | perm | PTE_V | PTE_R | PTE_W | PTE_X;
+    return 0;
+  }
+  // otherwise, just continue with regular small-page mapping
+}
   
   a = va;
   last = va + size - PGSIZE;
