@@ -40,6 +40,9 @@ start()
   // ask for clock interrupts.
   timerinit();
 
+  // allow supervisor-mode to read cycle/time/instret CSRs
+  w_mcounteren((1 << 0) | (1 << 1) | (1 << 2));  // CY | TM | IR
+
   // keep each CPU's hartid in its tp register, for cpuid().
   int id = r_mhartid();
   w_tp(id);

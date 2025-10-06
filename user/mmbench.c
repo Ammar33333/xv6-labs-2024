@@ -2,9 +2,29 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
+// syscall-based getters
 static uint64 now_cycles() { return getcycle(); }
 static uint64 now_time()   { return gettime(); }
 static uint64 now_inst()   { return getinstret(); }
+
+// direct hardware read (inline assembly)
+static inline uint64 r_cycle() {
+  uint64 x;
+  asm volatile("rdcycle %0" : "=r"(x));
+  return x;
+}
+
+static inline uint64 r_time() {
+  uint64 x;
+  asm volatile("rdtime %0" : "=r"(x));
+  return x;
+}
+
+static inline uint64 r_instret() {
+  uint64 x;
+  asm volatile("rdinstret %0" : "=r"(x));
+  return x;
+}
 
 // naive i-j-k triple loop matmul
 static void matmul(int *A, int *B, int *C, int n) {
@@ -61,14 +81,49 @@ main(int argc, char **argv)
 {
   // sizes to try; safe with 128MB; we stop if alloc fails
   int sizes[] = {256, 512, 768, 1024, 1536, 2048};
-  int m = sizeof(sizes)/sizeof(sizes[0]);
+  int m = sizeof(sizes) / sizeof(sizes[0]);
 
   printf("mmbench: cycles/time/instret via syscalls\n");
   for (int idx = 0; idx < m; idx++) {
     if (try_one(sizes[idx]) < 0) {
-      printf("N=%d  allocation failed — stopping.\n", sizes[idx]);
+      printf("N=%d allocation failed – stopping.\n", sizes[idx]);
       break;
     }
   }
+
+  // Add this section for direct CSR access comparison
+  printf("\nmmbench: cycles/time/instret via direct CSR reads\n");
+  for (int idx = 0; idx < m; idx++) {
+    int n = sizes[idx];
+    int bytes = n * n * sizeof(int);
+
+    int *A = malloc(bytes);
+    int *B = malloc(bytes);
+    int *C = malloc(bytes);
+    if (!A || !B || !C) {
+      printf("N=%d allocation failed – stopping.\n", n);
+      break;
+    }
+
+    uint64 c0 = r_cycle();
+    uint64 t0 = r_time();
+    uint64 i0 = r_instret();
+
+    matmul(A, B, C, n);
+
+    uint64 c1 = r_cycle();
+    uint64 t1 = r_time();
+    uint64 i1 = r_instret();
+
+    printf("N=%d bytes=%d cycles=%ld time=%ld inst=%ld\n",
+       n, bytes, c1 - c0, t1 - t0, i1 - i0);
+
+
+    free(A);
+    free(B);
+    free(C);
+  }
+
   exit(0);
 }
+
